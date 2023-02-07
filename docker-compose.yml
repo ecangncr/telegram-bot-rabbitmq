@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+
+  consumer:
+    build:
+      dockerfile: Dockerfile
+      context: "./bot/consumer"
+    restart: always
+    environment:
+      - RABBITMQ_CONTAINER_NAME=rabbitmq
+      - RABBITMQ_DEFAULT_USER=username
+      - RABBITMQ_DEFAULT_PASS=your-password
+      - RABBITMQ_DEFAULT_PORT=5672
+      - TELEGRAM_BOT_TOKEN=your-bot-token
+      - TELEGRAM_BOT_USERNAME=your-bot-username-example-@test123
+    volumes:
+      - type: bind
+        source: ./bot/consumer
+        target: /usr/src/app/
+    depends_on:
+      - publisher
+    networks:
+        - rabbitmq_nodejs
+
+  publisher:
+    build:
+      dockerfile: Dockerfile
+      context: "./bot/publisher"
+    restart: always
+    environment:
+      - RABBITMQ_CONTAINER_NAME=rabbitmq
+      - RABBITMQ_DEFAULT_USER=username
+      - RABBITMQ_DEFAULT_PASS=your-password
+      - RABBITMQ_DEFAULT_PORT=5672
+      - TELEGRAM_BOT_TOKEN=your-bot-token
+      - TELEGRAM_BOT_USERNAME=your-bot-username-example-@test123
+    depends_on:
+      - rabbitmq
+    volumes:
+      - type: bind
+        source: ./bot/publisher
+        target: /usr/src/app/
+    networks:
+        - rabbitmq_nodejs
+
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    container_name: 'rabbitmq'
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=username
+      - RABBITMQ_DEFAULT_PASS=your-password
+    ports:
+        - 5672:5672
+        - 15672:15672
+    networks:
+        - rabbitmq_nodejs
+networks:
+  rabbitmq_nodejs:
+    driver: bridge
